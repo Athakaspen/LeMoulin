@@ -28,7 +28,12 @@ function initializeBoard(){
 
 // function to construct Piece objects
 function Piece(value){
+  // letter on the piece
   this.value = value;
+  // stage of movement animation, used to animate piece movement
+  this.moveStage = 0;
+  // previous location of piece, used to animate piece movement
+  this.lastLoc = null;
 }
 
 // function to construct Location objects
@@ -41,13 +46,40 @@ function Location(index, x, y, links, piece){
 }
 
 function clickHandler(e){
-  mousePos = getMousePos(c, e);
-  ctx.fillStyle = 'blue';
-  ctx.fillRect(mousePos.x,mousePos.y,20,20);
+  m = getMousePos(c, e);
+  
+  // check if the click was on any location
+  for(var i=0; i<loc.length; i++){
+    // using equation for circle to determine if click was on a location
+    if(Math.pow(m.x-loc[i].x, 2) + Math.pow(m.y-loc[i].y, 2) <= Math.pow(radius, 2)){
+      //console.log(i);
+      // Check that there's a piece at the location clicked
+      if(loc[i].piece !== null){
+        // check if any adjacent locations are free
+        for (var j=0; j<loc[i].links.length; j++){
+          if (loc[loc[i].links[j]].piece === null){
+            // So now that everything is checked, move the piece.
+            loc[loc[i].links[j]].piece = loc[i].piece;
+            loc[loc[i].links[j]].piece.lastLoc = i;
+            loc[loc[i].links[j]].piece.moveStage = 10;
+            loc[i].piece = null;
+            drawBoard(ctx);
+          }
+        }
+      }
+    }
+  } 
+
+
+  // Places a blue square wherever you click
+  //ctx.fillStyle = 'blue';
+  //ctx.fillRect(mousePos.x,mousePos.y,20,20);
 }
 
 // Function to draw the board for the game
 function drawBoard(ctx){
+  //console.log ("drawing board...");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = boardColor;
   ctx.lineWidth = 4;
   // draw circles at each location (as defined in initializeBoard())
@@ -79,7 +111,7 @@ function drawBoard(ctx){
 
   // draw pieces
   ctx.font = radius*(4/3) + "px Arial";
-  console.log(ctx.font);
+  //console.log(ctx.font);
   for (var i=0; i<loc.length; i++){
     drawPiece(loc[i]);
   }
@@ -100,19 +132,42 @@ function drawLine(x1, y1, x2, y2){
   ctx.closePath();
 }
 
+var isMovement = false;
 function drawPiece(location){
   // check that the location has a piece before attempting to draw
   if (location.piece !== null){
-    // draw circle
-    ctx.fillStyle = pieceColor;
-    ctx.beginPath();
-    ctx.arc(location.x, location.y, radius-2, 0, 2*Math.PI);
-    ctx.fill();
-    ctx.closePath();
-    // draw text centered on piece
-    ctx.fillStyle = textColor;
-    ctx.textAlign = "center";
-    ctx.fillText(location.piece.value, location.x, location.y+(radius/2));
+    // special instructions if a piece is moving
+    if (location.piece.moveStage>0){
+      // draw circle
+      ctx.fillStyle = pieceColor;
+      ctx.beginPath();
+      ctx.arc(location.x + (loc[location.piece.lastLoc].x - location.x)*(location.piece.moveStage/10),
+              location.y + (loc[location.piece.lastLoc].y - location.y)*(location.piece.moveStage/10),
+              radius-2, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.closePath();
+      // draw text centered on piece
+      ctx.fillStyle = textColor;
+      ctx.textAlign = "center";
+      ctx.fillText(location.piece.value, 
+                   location.x + (loc[location.piece.lastLoc].x - location.x)*(location.piece.moveStage/10),
+                   location.y + (loc[location.piece.lastLoc].y - location.y)*(location.piece.moveStage/10)+(radius/2));
+      location.piece.moveStage--;
+      isMovement = true;
+      setTimeout(function(){drawBoard(ctx)}, 10)
+    }
+    else{
+      // draw circle
+      ctx.fillStyle = pieceColor;
+      ctx.beginPath();
+      ctx.arc(location.x, location.y, radius-2, 0, 2*Math.PI);
+      ctx.fill();
+      ctx.closePath();
+      // draw text centered on piece
+      ctx.fillStyle = textColor;
+      ctx.textAlign = "center";
+      ctx.fillText(location.piece.value, location.x, location.y+(radius/2));
+    }
   }
 }
 
