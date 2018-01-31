@@ -13,17 +13,29 @@ function getMousePos(canvas, evt){
   };
 }
 
-function initializeBoard(){
-  loc.push(new Location(0, 100, 150, [1,3,4], new Piece('L')));
-  loc.push(new Location(1, 250, 80,  [0,2], new Piece('E')));
-  loc.push(new Location(2, 400, 150, [1,4,5], new Piece('M')));
-  loc.push(new Location(3, 100, 300, [0,6], new Piece('N')));
+function initializeBoard(boardState){
+  loc = [];
+  loc.push(new Location(0, 100, 150, [1,3,4], new Piece(boardState[0])));
+  loc.push(new Location(1, 250, 80,  [0,2], new Piece(boardState[1])));
+  loc.push(new Location(2, 400, 150, [1,4,5], new Piece(boardState[2])));
+  loc.push(new Location(3, 100, 300, [0,6], new Piece(boardState[3])));
   loc.push(new Location(4, 250, 300, [0,2,6,8]));
-  loc.push(new Location(5, 400, 300, [2,8], new Piece('O')));
-  loc.push(new Location(6, 100, 450, [3,4,7], new Piece('I')));
-  loc.push(new Location(7, 250, 520, [6,8], new Piece('L')));
-  loc.push(new Location(8, 400, 450, [4,5,7], new Piece('U')));
+  loc.push(new Location(5, 400, 300, [2,8], new Piece(boardState[5])));
+  loc.push(new Location(6, 100, 450, [3,4,7], new Piece(boardState[6])));
+  loc.push(new Location(7, 250, 520, [6,8], new Piece(boardState[7])));
+  loc.push(new Location(8, 400, 450, [4,5,7], new Piece(boardState[8])));
   console.log(loc);
+}
+
+// return a valid scramble string
+function generateScramble(){
+  // just to test
+  return StartPos;
+}
+
+function scramble(){
+  initializeBoard(generateScramble());
+  drawBoard();
 }
 
 // function to construct Piece objects
@@ -63,12 +75,12 @@ function clickHandler(e){
             loc[loc[i].links[j]].piece.lastLoc = i;
             loc[loc[i].links[j]].piece.moveStage = 10;
             loc[i].piece = null;
-            drawBoard(ctx);
+            drawBoard();
           }
         }
       }
     }
-  } 
+  }
 
 
   // Places a blue square wherever you click
@@ -77,7 +89,7 @@ function clickHandler(e){
 }
 
 // Function to draw the board for the game
-function drawBoard(ctx){
+function drawBoard(){
   //console.log ("drawing board...");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = boardColor;
@@ -149,12 +161,12 @@ function drawPiece(location){
       // draw text centered on piece
       ctx.fillStyle = textColor;
       ctx.textAlign = "center";
-      ctx.fillText(location.piece.value, 
+      ctx.fillText(location.piece.value,
                    location.x + (loc[location.piece.lastLoc].x - location.x)*(location.piece.moveStage/10),
                    location.y + (loc[location.piece.lastLoc].y - location.y)*(location.piece.moveStage/10)+(radius/2));
       location.piece.moveStage--;
       isMovement = true;
-      setTimeout(function(){drawBoard(ctx)}, 10)
+      setTimeout(function(){drawBoard()}, 10);
     }
     else{
       // draw circle
@@ -182,12 +194,14 @@ var boardColor = 'black';
 var pieceColor = 'red';
 var textColor = 'white';
 
+var StartPos = ['L', 'E', 'M', 'N', '', 'O', 'I', 'L', 'U'];
+
 function init() {
   c = document.getElementById("canvas");
   ctx = c.getContext("2d");
-  initializeBoard();
+  initializeBoard(StartPos);
 
-  drawBoard(ctx);
+  drawBoard();
   
   document.addEventListener("click", clickHandler, false);
 }
