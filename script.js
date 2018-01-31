@@ -1,3 +1,32 @@
+var c;
+var ctx;
+// array to hold game board locations
+var loc = [];
+// value to set location radii
+var radius = 40;
+// colors
+var boardColor = 'black';
+var pieceColor = 'red';
+var textColor = 'white';
+
+var StartPos = ['L', 'E', 'M', 'N', '', 'O', 'I', 'L', 'U'];
+
+
+var moves = 0;
+var time = 0;
+var timer;
+
+function init() {
+  c = document.getElementById("canvas");
+  ctx = c.getContext("2d");
+  initializeBoard(StartPos);
+
+  drawBoard();
+  
+  document.addEventListener("click", clickHandler, false);
+}
+
+
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
 function getMousePos(canvas, evt){
@@ -25,16 +54,34 @@ function initializeBoard(boardState){
   loc.push(new Location(7, 250, 520, [6,8], new Piece(boardState[7])));
   loc.push(new Location(8, 400, 450, [4,5,7], new Piece(boardState[8])));
   console.log(loc);
+  moves = 0;
+  time = 0;
+  clearInterval(timer);
+  timer = setInterval(function(){time++; drawTimer();}, 1000);
 }
 
 // return a valid scramble string
 function generateScramble(){
   // just to test
-  return StartPos;
+  var scrambleArray = ['L', 'E', 'M', 'O', 'U', 'L', 'I', 'N'];
+  
+  for (var i = scrambleArray.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var x = scrambleArray[i];
+    scrambleArray[i] = scrambleArray[j];
+    scrambleArray[j] = x;
+  }
+  scrambleArray.splice(4,0,'');
+  return scrambleArray;
 }
 
 function scramble(){
   initializeBoard(generateScramble());
+  drawBoard();
+}
+
+function reset(){
+  initializeBoard(StartPos);
   drawBoard();
 }
 
@@ -75,6 +122,7 @@ function clickHandler(e){
             loc[loc[i].links[j]].piece.lastLoc = i;
             loc[loc[i].links[j]].piece.moveStage = 10;
             loc[i].piece = null;
+            moves++;
             drawBoard();
           }
         }
@@ -122,11 +170,14 @@ function drawBoard(){
   drawLine(372, 422, 278, 328);
 
   // draw pieces
-  ctx.font = radius*(4/3) + "px Arial";
   //console.log(ctx.font);
   for (var i=0; i<loc.length; i++){
     drawPiece(loc[i]);
   }
+  
+  // draw time and move counts
+  drawTimer();
+  drawMoves();
 }
 
 function drawCircle(ctx, x, y, r){
@@ -166,7 +217,7 @@ function drawPiece(location){
                    location.y + (loc[location.piece.lastLoc].y - location.y)*(location.piece.moveStage/10)+(radius/2));
       location.piece.moveStage--;
       isMovement = true;
-      setTimeout(function(){drawBoard()}, 10);
+      setTimeout(drawBoard, 10);
     }
     else{
       // draw circle
@@ -176,6 +227,7 @@ function drawPiece(location){
       ctx.fill();
       ctx.closePath();
       // draw text centered on piece
+      ctx.font = radius*(4/3) + "px Arial";
       ctx.fillStyle = textColor;
       ctx.textAlign = "center";
       ctx.fillText(location.piece.value, location.x, location.y+(radius/2));
@@ -183,25 +235,26 @@ function drawPiece(location){
   }
 }
 
-var c;
-var ctx;
-// array to hold game board locations
-var loc = [];
-// value to set location radii
-var radius = 40;
-// colors
-var boardColor = 'black';
-var pieceColor = 'red';
-var textColor = 'white';
+function drawMoves(){
+  ctx.font = "30px Arial";
+  ctx.fillStyle = 'black';
+  ctx.textAlign = "left";
+  ctx.fillText("Moves - " + moves, 10, 590);
+}
 
-var StartPos = ['L', 'E', 'M', 'N', '', 'O', 'I', 'L', 'U'];
-
-function init() {
-  c = document.getElementById("canvas");
-  ctx = c.getContext("2d");
-  initializeBoard(StartPos);
-
-  drawBoard();
+// draw the timer on screen
+function drawTimer(){
+  // clear timer area
+  ctx.clearRect(300, 550, 200, 550);
   
-  document.addEventListener("click", clickHandler, false);
+  ctx.font = "30px Arial";
+  ctx.fillStyle = 'black';
+  ctx.textAlign = "right";
+  var seconds;
+  if (time%60<10){
+    seconds = '0' + time%60;
+  } else {
+    seconds = time%60;
+  }
+  ctx.fillText("Time - " + Math.floor(time/60) + ":" + seconds , 490, 590);
 }

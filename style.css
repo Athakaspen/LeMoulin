@@ -42,9 +42,27 @@
   background-color: red;
 }
 
-#top-button {
-  width:100px;
-  height:200px;
+.button {
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 3px solid black;
   z-index: 2;
-  background-color: blue;
+  
+}
+
+#top-button {
+  width: 270px;
+  height: 200px;
+  margin: 40px 0 0 0;
+}
+
+#bottom-button {
+  width: 270px;
+  height: 200px;
+  margin: 40px 0 0 0;
+}
+
+.button-text{
+  text-align: center;
+  padding-top: 55px;
 }
