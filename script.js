@@ -16,6 +16,7 @@ var TIMED = 1;
 var playMode = FREEPLAY;
 
 var playerWon = false;
+var playerHasMoved = false;
 
 var moves = 0;
 var time = 0;
@@ -58,11 +59,12 @@ function initializeBoard(boardState){
   loc.push(new Location(6, 100, 450, [3,4,7], new Piece(boardState[6])));
   loc.push(new Location(7, 250, 520, [6,8], new Piece(boardState[7])));
   loc.push(new Location(8, 400, 450, [4,5,7], new Piece(boardState[8])));
-  console.log(loc);
+  //console.log(loc);
   moves = 0;
   time = 0;
   clearInterval(timer);
-  timer = setInterval(function(){time++; drawTimer();}, 1000);
+  playerWon = false;
+  playerHasMoved = false;
 }
 
 function getBoardState(){
@@ -95,14 +97,12 @@ function generateScramble(){
 function scramble(){
   initializeBoard(generateScramble());
   playMode = TIMED;
-  playerWon = false;
   drawBoard();
 }
 
 function freePlay(){
   initializeBoard(StartPos);
   playMode = FREEPLAY;
-  playerWon = false;
   drawBoard();
 }
 
@@ -144,8 +144,15 @@ function clickHandler(e){
             loc[loc[i].links[j]].piece.moveStage = 10;
             loc[i].piece = null;
             moves++;
+            
+            // if player is in timed mode, check for a win
             if (playMode == TIMED){
               playerWon = checkWin();
+            }
+            
+            if (!playerHasMoved){
+              timer = setInterval(function(){time++; drawTimer();}, 1000);
+              playerHasMoved = true;
             }
             
             drawBoard();
