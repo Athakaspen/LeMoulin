@@ -1,3 +1,37 @@
+var c;
+var ctx;
+// array to hold game board locations
+var loc = [];
+// value to set location radii
+var radius = 40;
+// colors
+var boardColor = 'black';
+var pieceColor = 'red';
+var textColor = 'white';
+
+var StartPos = ['L', 'E', 'M', 'N', '', 'O', 'I', 'L', 'U'];
+
+var FREEPLAY = 0;
+var TIMED = 1;
+var playMode = FREEPLAY;
+
+var playerWon = false;
+
+var moves = 0;
+var time = 0;
+var timer;
+
+function init() {
+  c = document.getElementById("canvas");
+  ctx = c.getContext("2d");
+  initializeBoard(StartPos);
+
+  drawBoard();
+  
+  document.addEventListener("click", clickHandler, false);
+}
+
+
 // Creates an object with x and y defined, set to the mouse position relative to the state's canvas
 // If you wanna be super-correct this can be tricky, we have to worry about padding and borders
 function getMousePos(canvas, evt){
@@ -13,17 +47,62 @@ function getMousePos(canvas, evt){
   };
 }
 
-function initializeBoard(){
-  loc.push(new Location(0, 100, 150, [1,3,4], new Piece('L')));
-  loc.push(new Location(1, 250, 80,  [0,2], new Piece('E')));
-  loc.push(new Location(2, 400, 150, [1,4,5], new Piece('M')));
-  loc.push(new Location(3, 100, 300, [0,6], new Piece('N')));
+function initializeBoard(boardState){
+  loc = [];
+  loc.push(new Location(0, 100, 150, [1,3,4], new Piece(boardState[0])));
+  loc.push(new Location(1, 250, 80,  [0,2], new Piece(boardState[1])));
+  loc.push(new Location(2, 400, 150, [1,4,5], new Piece(boardState[2])));
+  loc.push(new Location(3, 100, 300, [0,6], new Piece(boardState[3])));
   loc.push(new Location(4, 250, 300, [0,2,6,8]));
-  loc.push(new Location(5, 400, 300, [2,8], new Piece('O')));
-  loc.push(new Location(6, 100, 450, [3,4,7], new Piece('I')));
-  loc.push(new Location(7, 250, 520, [6,8], new Piece('L')));
-  loc.push(new Location(8, 400, 450, [4,5,7], new Piece('U')));
+  loc.push(new Location(5, 400, 300, [2,8], new Piece(boardState[5])));
+  loc.push(new Location(6, 100, 450, [3,4,7], new Piece(boardState[6])));
+  loc.push(new Location(7, 250, 520, [6,8], new Piece(boardState[7])));
+  loc.push(new Location(8, 400, 450, [4,5,7], new Piece(boardState[8])));
   console.log(loc);
+  moves = 0;
+  time = 0;
+  clearInterval(timer);
+  timer = setInterval(function(){time++; drawTimer();}, 1000);
+}
+
+function getBoardState(){
+  var boardState = [];
+  for (var i=0; i<loc.length; i++){
+    if (loc[i].piece === null){
+      boardState.push('');
+    }else{
+    boardState.push(loc[i].piece.value);
+    }
+  }
+  return boardState;
+}
+
+// return a valid scramble string
+function generateScramble(){
+  // just to test
+  var scrambleArray = ['L', 'E', 'M', 'O', 'U', 'L', 'I', 'N'];
+  
+  for (var i = scrambleArray.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var x = scrambleArray[i];
+    scrambleArray[i] = scrambleArray[j];
+    scrambleArray[j] = x;
+  }
+  scrambleArray.splice(4,0,'');
+  return scrambleArray;
+}
+
+function scramble(){
+  initializeBoard(generateScramble());
+  playMode = TIMED;
+  drawBoard();
+}
+
+function freePlay(){
+  initializeBoard(StartPos);
+  playMode = FREEPLAY;
+  playerWon = false;
+  drawBoard();
 }
 
 // function to construct Piece objects
@@ -63,12 +142,17 @@ function clickHandler(e){
             loc[loc[i].links[j]].piece.lastLoc = i;
             loc[loc[i].links[j]].piece.moveStage = 10;
             loc[i].piece = null;
-            drawBoard(ctx);
+            moves++;
+            if (playMode == TIMED){
+              playerWon = checkWin();
+            }
+            
+            drawBoard();
           }
         }
       }
     }
-  } 
+  }
 
 
   // Places a blue square wherever you click
@@ -77,7 +161,7 @@ function clickHandler(e){
 }
 
 // Function to draw the board for the game
-function drawBoard(ctx){
+function drawBoard(){
   //console.log ("drawing board...");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.fillStyle = boardColor;
@@ -110,10 +194,17 @@ function drawBoard(ctx){
   drawLine(372, 422, 278, 328);
 
   // draw pieces
-  ctx.font = radius*(4/3) + "px Arial";
   //console.log(ctx.font);
   for (var i=0; i<loc.length; i++){
     drawPiece(loc[i]);
+  }
+  
+  // draw time and move counts
+  drawTimer();
+  drawMoves();
+  
+  if(playerWon){
+    displayWin();
   }
 }
 
@@ -149,12 +240,12 @@ function drawPiece(location){
       // draw text centered on piece
       ctx.fillStyle = textColor;
       ctx.textAlign = "center";
-      ctx.fillText(location.piece.value, 
+      ctx.fillText(location.piece.value,
                    location.x + (loc[location.piece.lastLoc].x - location.x)*(location.piece.moveStage/10),
                    location.y + (loc[location.piece.lastLoc].y - location.y)*(location.piece.moveStage/10)+(radius/2));
       location.piece.moveStage--;
       isMovement = true;
-      setTimeout(function(){drawBoard(ctx)}, 10)
+      setTimeout(drawBoard, 10);
     }
     else{
       // draw circle
@@ -164,6 +255,7 @@ function drawPiece(location){
       ctx.fill();
       ctx.closePath();
       // draw text centered on piece
+      ctx.font = radius*(4/3) + "px Arial";
       ctx.fillStyle = textColor;
       ctx.textAlign = "center";
       ctx.fillText(location.piece.value, location.x, location.y+(radius/2));
@@ -171,23 +263,96 @@ function drawPiece(location){
   }
 }
 
-var c;
-var ctx;
-// array to hold game board locations
-var loc = [];
-// value to set location radii
-var radius = 40;
-// colors
-var boardColor = 'black';
-var pieceColor = 'red';
-var textColor = 'white';
-
-function init() {
-  c = document.getElementById("canvas");
-  ctx = c.getContext("2d");
-  initializeBoard();
-
-  drawBoard(ctx);
-  
-  document.addEventListener("click", clickHandler, false);
+function drawMoves(){
+  ctx.font = "30px Arial";
+  ctx.fillStyle = 'black';
+  ctx.textAlign = "left";
+  ctx.fillText("Moves - " + moves, 10, 590);
 }
+
+// draw the timer on screen
+function drawTimer(){
+  // clear timer area
+  ctx.clearRect(300, 550, 200, 550);
+  
+  ctx.font = "30px Arial";
+  ctx.fillStyle = 'black';
+  ctx.textAlign = "right";
+  var seconds;
+  if (time%60<10){
+    seconds = '0' + time%60;
+  } else {
+    seconds = time%60;
+  }
+  ctx.fillText(timerToString(), 490, 590);
+}
+
+function timerToString(){
+  var seconds;
+  if (time%60<10){
+    seconds = '0' + time%60;
+  } else {
+    seconds = time%60;
+  }
+  return "Time - " + Math.floor(time/60) + ":" + seconds;
+}
+
+function checkWin(){
+  // get the board state
+  var boardState = getBoardState();
+  // create an array that is in clockwise order
+  var checkArray = boardState.slice(0,3); checkArray.push(boardState[5]); checkArray.push(boardState[8]); checkArray.push(boardState[7]); checkArray.push(boardState[6]); checkArray.push(boardState[3]);
+  
+  // find the index of the letter E in the check array
+  var eIndex = checkArray.findIndex(function(element){return element == 'E';});
+  // get a consistent check array start point
+  checkArray = checkArray.slice(eIndex).concat(checkArray.slice(0,eIndex));
+  console.log(checkArray);
+  return checkArray.equals(['E', 'M', 'O', 'U', 'L', 'I', 'N', 'L']) || checkArray.equals(['E', 'L', 'N', 'I', 'L', 'U', 'O', 'M']);
+}
+
+function displayWin(){
+  ctx.clearRect(150,200,200,200);
+  ctx.strokeRect(150,200,200,200);
+  
+  ctx.font = "30px Arial";
+  ctx.fillStyle = 'black';
+  ctx.textAlign = "center";
+  ctx.fillText("You Win!", 250, 265);
+  ctx.fillText("Moves - " + moves, 250, 320);
+  ctx.fillText(timerToString(), 250, 360);
+  
+}
+
+
+// Copied Functions
+
+// Warn if overriding existing method
+if(Array.prototype.equals)
+    console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
+// attach the .equals method to Array's prototype to call it on any array
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+
+    // compare lengths - can save a lot of time
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l=this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;
+        }
+        else if (this[i] != array[i]) {
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;
+        }
+    }
+    return true;
+}
+// Hide method from for-in loops
+Object.defineProperty(Array.prototype, "equals", {enumerable: false});

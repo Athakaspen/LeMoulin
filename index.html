@@ -8,12 +8,26 @@
   </head>
 
   <body onLoad="init();">
+    <div id="left-panel">
+      <h2><i>Le Moulin</i> is a classic French sliding puzzle, first officially marketed in 1904. It was the first (recorded) mass-produced sliding puzzle, and contains some unexpected complexities normally found in more complicated types of permutation puzzles. </h2>
+      <h1>OBJECT</h1>
+      <h2>The goal of game is to spell out the phrase "Le Moulin" on the outside places of the puzzle, either clockwise or anticlockwise. The puzzle is solved when you load the page, so click 'Scramble' to mix it up and time your solve!</h2>
+    </div>
+    
     <div id="canvas-div">
       <canvas id="canvas" width="500" height="600"><br>
         This text is displayed if your browser does not support HTML5 Canvas.<br>
       </canvas>
     </div>
     
+    <div id="right-panel">
+      <div id="top-button" class="button" onClick="scramble()">
+        <h1 id='top-button-text' class="button-text">Scramble</h1>
+      </div>
+      <div id="bottom-button" class="button" onClick="freePlay()">
+        <h1 id="bottom-button-text" class="button-text">Free Play</h1>
+      </div>
+    </div>
     
     <script src="script.js">
     </script>
