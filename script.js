@@ -95,6 +95,7 @@ function generateScramble(){
 function scramble(){
   initializeBoard(generateScramble());
   playMode = TIMED;
+  playerWon = false;
   drawBoard();
 }
 
@@ -307,7 +308,7 @@ function checkWin(){
   var eIndex = checkArray.findIndex(function(element){return element == 'E';});
   // get a consistent check array start point
   checkArray = checkArray.slice(eIndex).concat(checkArray.slice(0,eIndex));
-  console.log(checkArray);
+  //console.log(checkArray);
   return checkArray.equals(['E', 'M', 'O', 'U', 'L', 'I', 'N', 'L']) || checkArray.equals(['E', 'L', 'N', 'I', 'L', 'U', 'O', 'M']);
 }
 
