@@ -11,6 +11,11 @@ var textColor = 'white';
 
 var StartPos = ['L', 'E', 'M', 'N', '', 'O', 'I', 'L', 'U'];
 
+var FREEPLAY = 0;
+var TIMED = 1;
+var playMode = FREEPLAY;
+
+var playerWon = false;
 
 var moves = 0;
 var time = 0;
@@ -60,6 +65,18 @@ function initializeBoard(boardState){
   timer = setInterval(function(){time++; drawTimer();}, 1000);
 }
 
+function getBoardState(){
+  var boardState = [];
+  for (var i=0; i<loc.length; i++){
+    if (loc[i].piece === null){
+      boardState.push('');
+    }else{
+    boardState.push(loc[i].piece.value);
+    }
+  }
+  return boardState;
+}
+
 // return a valid scramble string
 function generateScramble(){
   // just to test
@@ -77,11 +94,14 @@ function generateScramble(){
 
 function scramble(){
   initializeBoard(generateScramble());
+  playMode = TIMED;
   drawBoard();
 }
 
-function reset(){
+function freePlay(){
   initializeBoard(StartPos);
+  playMode = FREEPLAY;
+  playerWon = false;
   drawBoard();
 }
 
@@ -123,6 +143,10 @@ function clickHandler(e){
             loc[loc[i].links[j]].piece.moveStage = 10;
             loc[i].piece = null;
             moves++;
+            if (playMode == TIMED){
+              playerWon = checkWin();
+            }
+            
             drawBoard();
           }
         }
@@ -178,6 +202,10 @@ function drawBoard(){
   // draw time and move counts
   drawTimer();
   drawMoves();
+  
+  if(playerWon){
+    displayWin();
+  }
 }
 
 function drawCircle(ctx, x, y, r){
@@ -256,5 +284,75 @@ function drawTimer(){
   } else {
     seconds = time%60;
   }
-  ctx.fillText("Time - " + Math.floor(time/60) + ":" + seconds , 490, 590);
+  ctx.fillText(timerToString(), 490, 590);
 }
+
+function timerToString(){
+  var seconds;
+  if (time%60<10){
+    seconds = '0' + time%60;
+  } else {
+    seconds = time%60;
+  }
+  return "Time - " + Math.floor(time/60) + ":" + seconds;
+}
+
+function checkWin(){
+  // get the board state
+  var boardState = getBoardState();
+  // create an array that is in clockwise order
+  var checkArray = boardState.slice(0,3); checkArray.push(boardState[5]); checkArray.push(boardState[8]); checkArray.push(boardState[7]); checkArray.push(boardState[6]); checkArray.push(boardState[3]);
+  
+  // find the index of the letter E in the check array
+  var eIndex = checkArray.findIndex(function(element){return element == 'E';});
+  // get a consistent check array start point
+  checkArray = checkArray.slice(eIndex).concat(checkArray.slice(0,eIndex));
+  console.log(checkArray);
+  return checkArray.equals(['E', 'M', 'O', 'U', 'L', 'I', 'N', 'L']) || checkArray.equals(['E', 'L', 'N', 'I', 'L', 'U', 'O', 'M']);
+}
+
+function displayWin(){
+  ctx.clearRect(150,200,200,200);
+  ctx.strokeRect(150,200,200,200);
+  
+  ctx.font = "30px Arial";
+  ctx.fillStyle = 'black';
+  ctx.textAlign = "center";
+  ctx.fillText("You Win!", 250, 265);
+  ctx.fillText("Moves - " + moves, 250, 320);
+  ctx.fillText(timerToString(), 250, 360);
+  
+}
+
+
+// Copied Functions
+
+// Warn if overriding existing method
+if(Array.prototype.equals)
+    console.warn("Overriding existing Array.prototype.equals. Possible causes: New API defines the method, there's a framework conflict or you've got double inclusions in your code.");
+// attach the .equals method to Array's prototype to call it on any array
+Array.prototype.equals = function (array) {
+    // if the other array is a falsy value, return
+    if (!array)
+        return false;
+
+    // compare lengths - can save a lot of time
+    if (this.length != array.length)
+        return false;
+
+    for (var i = 0, l=this.length; i < l; i++) {
+        // Check if we have nested arrays
+        if (this[i] instanceof Array && array[i] instanceof Array) {
+            // recurse into the nested arrays
+            if (!this[i].equals(array[i]))
+                return false;
+        }
+        else if (this[i] != array[i]) {
+            // Warning - two different object instances will never be equal: {x:20} != {x:20}
+            return false;
+        }
+    }
+    return true;
+}
+// Hide method from for-in loops
+Object.defineProperty(Array.prototype, "equals", {enumerable: false});
